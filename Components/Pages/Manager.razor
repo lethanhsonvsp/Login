@@ -1,0 +1,146 @@
+﻿@page "/manager"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Policy = "ManagerOrAbove")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Identity
+@using BlazorApp.Data
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+@inject UserManager<ApplicationUser> UserManager
+@inject RoleManager<IdentityRole> RoleManager
+
+<PageTitle>Manager Dashboard</PageTitle>
+
+<h1>Manager Dashboard</h1>
+
+<p>Welcome, Manager! Manage user accounts and roles below.</p>
+
+@if (Users == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Level</th>
+                    <th>Roles</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Users)
+                {
+                    <tr>
+                        <td>@user.UserName</td>
+                        <td>@user.Level</td>
+                        <td>@string.Join(", ", UserRoles[user.Id] ?? new List<string>())</td>
+                        <td>
+                            <select @bind="@SelectedRoles[user.Id]" multiple>
+                                @foreach (var role in AvailableRoles)
+                                {
+                                    <option value="@role">@role</option>
+                                }
+                            </select>
+                            <button class="btn btn-primary btn-sm ms-2" @onclick="() => UpdateUserRoles(user)">Update Roles</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+
+@code {
+    private List<ApplicationUser> Users = null!;
+    private Dictionary<string, List<string>> UserRoles = new();
+    private Dictionary<string, string[]> SelectedRoles = new();
+    private List<string> AvailableRoles = new() { "Manager", "User" };
+    private string? ErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch users with Level != 0 and their roles in a single query
+        var usersWithRoles = await DbContext.Users
+            .Where(u => u.Level != 0)
+            .OrderBy(u => u.Level)
+            .Select(u => new
+            {
+                User = u,
+                Roles = DbContext.UserRoles
+                    .Where(ur => ur.UserId == u.Id)
+                    .Join(DbContext.Roles,
+                          ur => ur.RoleId,
+                          r => r.Id,
+                          (ur, r) => r.Name)
+                    .ToList()
+            })
+            .ToListAsync();
+
+        Users = usersWithRoles.Select(x => x.User).ToList();
+        foreach (var user in usersWithRoles)
+        {
+            UserRoles[user.User.Id] = user.Roles;
+            SelectedRoles[user.User.Id] = user.Roles.ToArray();
+        }
+    }
+
+    private async Task UpdateUserRoles(ApplicationUser user)
+    {
+        try
+        {
+            var currentRoles = await UserManager.GetRolesAsync(user);
+            var selectedRoles = SelectedRoles[user.Id].ToList();
+
+            var rolesToAdd = selectedRoles.Except(currentRoles).ToList();
+            var rolesToRemove = currentRoles.Except(selectedRoles).ToList();
+
+            if (rolesToAdd.Any())
+            {
+                var addResult = await UserManager.AddToRolesAsync(user, rolesToAdd);
+                if (!addResult.Succeeded)
+                {
+                    ErrorMessage = $"Failed to add roles: {string.Join("; ", addResult.Errors.Select(e => e.Description))}";
+                    return;
+                }
+            }
+
+            if (rolesToRemove.Any())
+            {
+                var removeResult = await UserManager.RemoveFromRolesAsync(user, rolesToRemove);
+                if (!removeResult.Succeeded)
+                {
+                    ErrorMessage = $"Failed to remove roles: {string.Join("; ", removeResult.Errors.Select(e => e.Description))}";
+                    return;
+                }
+            }
+
+            // Update level based on roles
+            if (selectedRoles.Contains("Manager"))
+            {
+                user.Level = 1;
+            }
+            else
+            {
+                user.Level = 2;
+            }
+            await UserManager.UpdateAsync(user);
+
+            UserRoles[user.Id] = selectedRoles.ToList();
+            ErrorMessage = null;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"An error occurred: {ex.Message}";
+        }
+    }
+}

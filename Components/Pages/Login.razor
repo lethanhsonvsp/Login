@@ -1,0 +1,42 @@
+﻿@page "/login"
+@using Microsoft.AspNetCore.Identity
+@using BlazorApp.Data
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Login</PageTitle>
+
+<h1>Login</h1>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+
+<div class="row">
+    <div class="col-md-4">
+        <form method="post" action="/api/login">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input id="username" name="username" class="form-control" @bind="Model.Username" />
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" class="form-control" @bind="Model.Password" />
+            </div>
+            <button type="submit" class="btn btn-primary mt-2">Login</button>
+        </form>
+    </div>
+</div>
+
+@code {
+    private LoginModel Model = new();
+    private string? ErrorMessage;
+
+    private class LoginModel
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}

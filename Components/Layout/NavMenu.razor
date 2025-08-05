@@ -1,0 +1,90 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using BlazorApp.Data
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">BlazorApp</a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="counter">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="weather">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
+            </NavLink>
+        </div>
+        @if (IsAuthenticated)
+        {
+            @if (IsAdmin)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin">
+                        <span class="bi bi-shield-lock-fill-nav-menu" aria-hidden="true"></span> Admin
+                    </NavLink>
+                </div>
+            }
+            @if (IsAdmin || IsManager)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="manager">
+                        <span class="bi bi-person-workspace-nav-menu" aria-hidden="true"></span> Manager
+                    </NavLink>
+                </div>
+            }
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/api/logout">
+                    <span class="bi bi-box-arrow-right-nav-menu" aria-hidden="true"></span> Logout
+                </NavLink>
+            </div>
+        }
+        else
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="login">
+                    <span class="bi bi-box-arrow-in-right-nav-menu" aria-hidden="true"></span> Login
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="register">
+                    <span class="bi bi-person-plus-fill-nav-menu" aria-hidden="true"></span> Register
+                </NavLink>
+            </div>
+        }
+    </nav>
+</div>
+
+@code {
+    private bool IsAuthenticated => SignInManager.IsSignedIn(User);
+    private bool IsAdmin { get; set; }
+    private bool IsManager { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
+
+    private ClaimsPrincipal User => AuthenticationStateTask.Result.User;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthenticationStateTask;
+        if (IsAuthenticated)
+        {
+            IsAdmin = User.IsInRole("Admin");
+            IsManager = User.IsInRole("Manager");
+        }
+    }
+}

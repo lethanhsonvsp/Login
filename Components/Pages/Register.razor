@@ -1,0 +1,45 @@
+﻿@page "/register"
+@using Microsoft.AspNetCore.Identity
+@using BlazorApp.Data
+@inject NavigationManager NavigationManager
+
+<PageTitle>Register</PageTitle>
+
+<h1>Register</h1>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+
+<div class="row">
+    <div class="col-md-4">
+        <form method="post" action="/api/register">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input id="username" name="username" class="form-control" @bind="Model.Username" />
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" class="form-control" @bind="Model.Password" />
+            </div>
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input id="confirmPassword" name="confirmPassword" type="password" class="form-control" @bind="Model.ConfirmPassword" />
+            </div>
+            <button type="submit" class="btn btn-primary mt-2">Register</button>
+        </form>
+    </div>
+</div>
+
+@code {
+    private RegisterModel Model = new();
+    private string? ErrorMessage;
+
+    private class RegisterModel
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}

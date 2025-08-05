@@ -1,0 +1,10 @@
+﻿@page "/logout"
+@using Microsoft.AspNetCore.Identity
+@inject NavigationManager NavigationManager
+
+@code {
+    protected override void OnInitialized()
+    {
+        NavigationManager.NavigateTo("/api/logout", forceLoad: true);
+    }
+}
