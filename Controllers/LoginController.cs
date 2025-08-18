@@ -18,31 +18,27 @@ namespace BlazorApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] LoginModel model)
+        public async Task<IActionResult> Post([FromForm] LoginModel model)
         {
             var user = await _userManager.FindByNameAsync(model.Username);
             if (user == null)
-                return Unauthorized(new { error = "Invalid username or password" });
-
-            var result = await _signInManager.PasswordSignInAsync(
-                model.Username,
-                model.Password,
-                isPersistent: model.RememberMe,
-                lockoutOnFailure: false);
-
-            if (result.Succeeded)
             {
-                return Ok(new { message = "Login successful" });
+                return Redirect("/login?error=Invalid username or password");
             }
 
-            return Unauthorized(new { error = "Invalid username or password" });
+            var result = await _signInManager.PasswordSignInAsync(model.Username, model.Password, isPersistent: false, lockoutOnFailure: false);
+            if (result.Succeeded)
+            {
+                return Redirect("/");
+            }
+
+            return Redirect("/login?error=Invalid username or password");
         }
 
         public class LoginModel
         {
             public string Username { get; set; } = string.Empty;
             public string Password { get; set; } = string.Empty;
-            public bool RememberMe { get; set; }
         }
     }
 }
