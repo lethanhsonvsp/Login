@@ -1,79 +1,93 @@
 ﻿@page "/admin"
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 @rendermode InteractiveServer
-
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using BlazorApp.Data
 @using Microsoft.EntityFrameworkCore
+@using MudBlazor
 @inject UserManager<ApplicationUser> UserManager
 @inject RoleManager<IdentityRole> RoleManager
 @attribute [Authorize(Policy = "AdminOnly")]
 
 <PageTitle>Admin Dashboard</PageTitle>
 
-<h1>Admin Dashboard</h1>
+<MudContainer MaxWidth="MaxWidth.Large" Class="my-4">
+    <MudText Typo="Typo.h3" GutterBottom="true">Admin Dashboard</MudText>
+    <MudText>Welcome, Admin! Manage user accounts and roles below.</MudText>
 
-<p>Welcome, Admin! Manage user accounts and roles below.</p>
+    @if (Users == null)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else
+    {
+        <MudTable Items="@Users" Dense="true" Hover="true" Striped="true" Bordered="true" Class="mt-4">
+            <HeaderContent>
+                <MudTh>Username</MudTh>
+                <MudTh>Level</MudTh>
+                <MudTh>Roles</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.UserName</MudTd>
+                <MudTd>@context.Level</MudTd>
+                <MudTd>
+                    @if (UserRoles.ContainsKey(context.Id) && UserRoles[context.Id].Any())
+                    {
+                        foreach (var role in UserRoles[context.Id])
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="GetChipColor(role)">@role</MudChip>
+                        }
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Default">None</MudChip>
+                    }
+                </MudTd>
+                <MudTd>
+                    <MudSelect T="string" Label="Select Roles" Variant="Variant.Outlined" Dense="true" Multiple="true" SelectedValues="@SelectedRoles[context.Id]" SelectedValuesChanged="(newValues) => UpdateSelectedRoles(context.Id, newValues)">
+                        @foreach (var role in AvailableRoles)
+                        {
+                            <MudSelectItem Value="@role" />
+                        }
+                    </MudSelect>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="() => UpdateUserRoles(context)" Style="margin-left: 8px;">Update Roles</MudButton>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
 
-@if (Users == null)
-{
-    <p>Loading...</p>
-}
-else
-{
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Level</th>
-                    <th>Roles</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var user in Users)
-                {
-                    <tr>
-                        <td>@user.UserName</td>
-                        <td>@user.Level</td>
-                        <td>@string.Join(", ", UserRoles[user.Id] ?? new List<string>())</td>
-                        <td>
-                            <select @bind="@SelectedRoles[user.Id]" multiple>
-                                @foreach (var role in AvailableRoles)
-                                {
-                                    <option value="@role">@role</option>
-                                }
-                            </select>
-                            <button class="btn btn-primary btn-sm ms-2" @onclick="() => UpdateUserRoles(user)">Update Roles</button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-}
-
-@if (!string.IsNullOrEmpty(ErrorMessage))
-{
-    <div class="alert alert-danger">@ErrorMessage</div>
-}
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-4">@ErrorMessage</MudAlert>
+    }
+</MudContainer>
 
 @code {
     private List<ApplicationUser> Users = null!;
     private Dictionary<string, List<string>> UserRoles = new();
-    private Dictionary<string, string[]> SelectedRoles = new();
+    private Dictionary<string, HashSet<string>> SelectedRoles = new();
     private List<string> AvailableRoles = new() { "Admin", "Manager", "User" };
     private string? ErrorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        Users = await UserManager.Users.OrderBy(u => u.Level).ToListAsync(); // <-- thêm OrderBy
+        Users = await UserManager.Users.OrderBy(u => u.Level).ToListAsync();
         foreach (var user in Users)
         {
             UserRoles[user.Id] = (await UserManager.GetRolesAsync(user)).ToList();
-            SelectedRoles[user.Id] = UserRoles[user.Id].ToArray();
+            SelectedRoles[user.Id] = new HashSet<string>(UserRoles[user.Id]);
         }
+    }
+
+    private Task UpdateSelectedRoles(string userId, IEnumerable<string> newValues)
+    {
+        SelectedRoles[userId] = new HashSet<string>(newValues);
+        return Task.CompletedTask;
     }
 
     private async Task UpdateUserRoles(ApplicationUser user)
@@ -130,4 +144,16 @@ else
             ErrorMessage = $"An error occurred: {ex.Message}";
         }
     }
+
+    private Color GetChipColor(string role)
+    {
+        return role switch
+        {
+            "Admin" => Color.Error,
+            "Manager" => Color.Warning,
+            _ => Color.Success
+        };
+    }
 }
+
+

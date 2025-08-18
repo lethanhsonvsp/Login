@@ -1,7 +1,8 @@
-﻿using BlazorApp.Components;
-using BlazorApp.Data;
-using Microsoft.AspNetCore.Identity;
+﻿using BlazorApp.Data;
+using MudBlazor.Services;
+using BlazorApp.Components;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddMudServices();
 // Add controllers
 builder.Services.AddControllers();
 
