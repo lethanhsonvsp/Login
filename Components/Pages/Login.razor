@@ -1,42 +1,79 @@
 ﻿@page "/login"
 @using Microsoft.AspNetCore.Identity
 @using BlazorApp.Data
-@inject SignInManager<ApplicationUser> SignInManager
-@inject UserManager<ApplicationUser> UserManager
-@inject NavigationManager NavigationManager
 
 <PageTitle>Login</PageTitle>
 
-<h1>Login</h1>
+<div class="login-container">
+    <MudCard Style="max-width: 400px; width: 100%;">
+        <MudCardContent Class="d-flex flex-column align-center"
+                        Style="background-color: #161b22; padding: 30px; border-radius: 8px;
+                               box-shadow: 0 0 15px rgba(88, 166, 255, 0.5);
+                               border: 1px solid #58a6ff; font-family: 'Courier New', monospace;
+                               color: #c9d1d9;">
+            <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Large" Color="Color.Info" Class="mb-2" />
+            <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-4"
+                     Style="color: #58a6ff; text-shadow: 0 0 5px rgba(88, 166, 255, 0.7);">
+                Welcome Back
+            </MudText>
 
-@if (!string.IsNullOrEmpty(ErrorMessage))
-{
-    <div class="alert alert-danger">@ErrorMessage</div>
-}
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mb-3" Square="true"
+                          Style="background-color: #0d1117; color: #c9d1d9; border: 1px solid #30363d;">
+                    @ErrorMessage
+                </MudAlert>
+            }
 
-<div class="row">
-    <div class="col-md-4">
-        <form method="post" action="/api/login">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input id="username" name="username" class="form-control" @bind="Model.Username" />
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input id="password" name="password" type="password" class="form-control" @bind="Model.Password" />
-            </div>
-            <button type="submit" class="btn btn-primary mt-2">Login</button>
-        </form>
-    </div>
+            <form method="post" action="/api/login" style="width:100%;">
+                <MudTextField T="string" Name="Username"
+                              Placeholder="Username"
+                              Variant="Variant.Filled"
+                              Class="mb-3"
+                              FullWidth="true"
+                              Required="true"
+                              Style="background-color: #0d1117; border: 1px solid #30363d; color: #c9d1d9; font-family: 'Courier New', monospace;"
+                              FocusedStyle="border-color: #58a6ff; box-shadow: 0 0 8px rgba(88, 166, 255, 0.5);" />
+
+                <MudTextField T="string" Name="Password"
+                              Placeholder="Password"
+                              InputType="InputType.Password"
+                              Variant="Variant.Filled"
+                              Class="mb-4"
+                              FullWidth="true"
+                              Required="true"
+                              Style="background-color: #0d1117; border: 1px solid #30363d; color: #c9d1d9; font-family: 'Courier New', monospace;"
+                              FocusedStyle="border-color: #58a6ff; box-shadow: 0 0 8px rgba(88, 166, 255, 0.5);" />
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Success"
+                           ButtonType="ButtonType.Submit"
+                           FullWidth="true"
+                           Size="Size.Large"
+                           Style="border-radius:4px; background-color: #238636; transition: background-color 0.3s, box-shadow 0.3s; font-family: 'Courier New', monospace;"
+                           OnMouseOver="e => e.CurrentTarget.Style.CssText += 'background-color: #2ea043; box-shadow: 0 0 10px rgba(46, 160, 67, 0.7);'"
+                           OnMouseOut="e => e.CurrentTarget.Style.CssText = 'background-color: #238636; box-shadow: none;'">
+                    Login
+                </MudButton>
+            </form>
+
+            <MudText Typo="Typo.body2" Align="Align.Center" Class="mt-4" Style="color: #8b949e;">
+                Don’t have an account?
+                <MudLink Href="/register" Style="color: #58a6ff;">Register</MudLink>
+            </MudText>
+        </MudCardContent>
+    </MudCard>
 </div>
 
-@code {
-    private LoginModel Model = new();
-    private string? ErrorMessage;
-
-    private class LoginModel
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
+<style>
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh; /* căn giữa màn hình */
     }
+</style>
+
+@code {
+    private string? ErrorMessage;
 }
